@@ -168,10 +168,12 @@ function create4AFCTrial(trialData) {
             difficulty: trialData.difficulty,
             correct_answer: correctIndex + 1,
             target_image: trialData.target,
-            presented_images: shuffledImages
+            presented_images: shuffledImages,
+            group_order: groupOrder
         },
         on_finish: function(data) {
             data.correct = data.response === correctIndex;
+            console.log(data);
         }
     };
 }
@@ -186,14 +188,20 @@ function createProductionTrial(trialData) {
                 <img src="${trialData.target}">
             </div>
             <div class="text-input">
-                <input type="text" name="response" required autofocus>
+                <input id="prod-input" type="text" name="response" required>
             </div>
         `,
         data: {
             task: 'production',
             label: trialData.label,
             difficulty: trialData.difficulty,
-            target_image: trialData.target
+            target_image: trialData.target,
+            group_order: groupOrder
+        },
+        on_load: function() {
+            // Wait for DOM to fully render, then focus
+            const input = document.getElementById('prod-input');
+            if (input) input.focus();
         },
         on_finish: function(data) {
             const response = data.response.response.toLowerCase().trim();
@@ -204,6 +212,7 @@ function createProductionTrial(trialData) {
             data.final_response = final_response;
             data.correct_response = correct;
             data.correct = final_response === correct;
+            console.log(data);
         }
     };
 }
