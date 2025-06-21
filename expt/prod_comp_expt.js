@@ -155,12 +155,6 @@ function create4AFCTrial(trialData) {
     return {
         type: jsPsychHtmlButtonResponse,
         stimulus: `<h3>Which image shows: "${trialData.label}"?</h3>`,
-        //     <div class="image-grid">
-        //         <img src="${shuffledImages[0]}" alt="Option 1">
-        //         <img src="${shuffledImages[1]}" alt="Option 2">
-        //         <img src="${shuffledImages[2]}" alt="Option 3">
-        //         <img src="${shuffledImages[3]}" alt="Option 4">
-        //     </div>
         choices: shuffledImages,
         button_html: (choice) => {
             return `<button class="jspsych-btn"><img src="${choice}" /></button>`
@@ -192,7 +186,7 @@ function createProductionTrial(trialData) {
                 <img src="${trialData.target}">
             </div>
             <div class="text-input">
-                <input type="text" name="response" required>
+                <input type="text" name="response" required autofocus>
             </div>
         `,
         data: {
@@ -218,8 +212,8 @@ function createProductionTrial(trialData) {
 const instructions4AFC = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
-        <h2>Instructions: Multiple Choice Task</h2>
-        <p>In this task, you will see four images and a word. Your job is to click on the number below the image that matches the word.</p>
+        <h2>Instructions: Matching Task</h2>
+        <p>In this task, you will see four images and a word. Your job is to choose the image that matches the word.</p>
         <p>First, you'll do a few practice trials to get familiar with the task.</p>
         <p>Click "Continue" when you're ready to start the practice.</p>
     `,
@@ -230,7 +224,7 @@ const instructionsProduction = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
         <h2>Instructions: Naming Task</h2>
-        <p>In this task, you will see a single image. Your job is to type what you see in the image.</p>
+        <p>In this task, you will see a single image. Your job is to say what you see in the image.</p>
         <p>First, you'll do a few practice trials to get familiar with the task.</p>
         <p>Click "Continue" when you're ready to start the practice.</p>
     `,
