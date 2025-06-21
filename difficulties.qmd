@@ -1,0 +1,66 @@
+---
+title: "Difficulties"
+format: html
+---
+
+Running a quick IRT model to get difficulty distributions over the Visual Vocab items
+
+```{r}
+library(tidyverse)
+library(mirt)
+library(here)
+library(jsonlite)
+```
+
+```{r}
+df_data <- read_csv(here("vv_data", "trial_level_for_modeling.csv"))
+
+df_data <- df_data |> 
+  select(pid, correct, targetWord)
+
+df_wide <- df_data |> 
+  pivot_wider(names_from = targetWord, values_from = correct, values_fn = max) |> 
+  select(-pid)
+```
+
+```{r}
+mod_irt <- mirt(df_wide, 1, itemtype = "2PL", 
+                technical = list(NCYCLES = 1000))
+
+df_difficulties <- mod_irt |>
+  coef(IRTpars = TRUE, simplify = TRUE) |> 
+  (\(x) x$items)() |> 
+  as_tibble(rownames = "item")
+```
+
+```{r}
+df_out <- df_difficulties |> 
+  select(item, item_discrimination = a, item_difficulty = b) |> 
+  arrange(item_difficulty) |> 
+  mutate(difficulty = rep(1:4, each = n()/4)) |> 
+  bind_rows(tibble(item = c("ant", "ball", "duck", "wheel"),
+                   difficulty = 0)) |> 
+  arrange(difficulty)
+```
+
+```{r}
+df_manifest <- read_csv(here("vv_data", "manifest.csv"))
+```
+
+```{r}
+df_manifest_combined <- df_out |> 
+  left_join(df_manifest, by = join_by(item == text1)) |>
+  select(label = item,
+         target = image1,
+         distractor1 = image2,
+         distractor2 = image3,
+         distractor3 = image4,
+         difficulty) |>
+  write_csv(here("expt", "manifest.csv"))
+
+df_manifest_combined |> 
+  toJSON() |> 
+  write_file(here("expt", "manifest.json"))
+```
+
+
