@@ -61,7 +61,7 @@ const demographics = {
     type: jsPsychSurveyHtmlForm,
     html: `
         <div class="demographics-form">
-            <h2>Basic Information</h2>
+            <h2>About You</h2>
             <div class="form-group">
                 <label for="age">Age:</label>
                 <select name="age" id="age" required>
@@ -147,7 +147,7 @@ function processManifestData() {
 }
 
 // Create 4AFC trial
-function create4AFCTrial(trialData) {
+function createComprehensionTrial(trialData) {
     const images = [trialData.target, trialData.distractor1, trialData.distractor2, trialData.distractor3];
     const shuffledImages = jsPsych.randomization.shuffle(images);
     const correctIndex = shuffledImages.indexOf(trialData.target);
@@ -163,7 +163,7 @@ function create4AFCTrial(trialData) {
         grid_rows: 2,
         grid_columns: 2,
         data: {
-            task: '4AFC',
+            task: 'comprehension',
             label: trialData.label,
             difficulty: trialData.difficulty,
             correct_answer: correctIndex + 1,
@@ -267,19 +267,24 @@ const final = {
 async function buildTimeline() {
     await loadManifest();
     
-    //  let timeline = [consent, demographics];
+    const testing = false;
     let timeline = [];
+    if (testing) {
+        groupOrder = 'CP';
+    } else {
+        timeline.push(demographics);
+    }
 
     if (groupOrder === 'CP') {
         // C group first (4AFC)
         timeline.push(instructions4AFC);
-        timeline.push(...practiceTrialsC.map(trial => create4AFCTrial(trial)));
+        timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
         timeline.push({
             type: jsPsychHtmlButtonResponse,
             stimulus: '<p>Practice complete! Now starting the main task.</p>',
             choices: ['Continue']
         });
-        timeline.push(...mainTrialsC.map(trial => create4AFCTrial(trial)));
+        timeline.push(...mainTrialsC.map(trial => createComprehensionTrial(trial)));
         
         timeline.push(betweenGroupsBreak);
         
@@ -307,13 +312,13 @@ async function buildTimeline() {
         
         // C group second (4AFC)
         timeline.push(instructions4AFC);
-        timeline.push(...practiceTrialsC.map(trial => create4AFCTrial(trial)));
+        timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
         timeline.push({
             type: jsPsychHtmlButtonResponse,
             stimulus: '<p>Practice complete! Now starting the main task.</p>',
             choices: ['Continue']
         });
-        timeline.push(...mainTrialsC.map(trial => create4AFCTrial(trial)));
+        timeline.push(...mainTrialsC.map(trial => createComprehensionTrial(trial)));
     }
 
     timeline.push(final);
