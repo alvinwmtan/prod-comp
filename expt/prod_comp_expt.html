@@ -11,70 +11,13 @@
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
     <script src="https://unpkg.com/papaparse@5.4.1"></script>
     <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" type="text/css">
-    <style>
-        .jspsych-content {
-            max-width: 1000px;
-        }
+    <link rel="stylesheet" href="prod_comp.css">
 
-        .jspsych-btn img {
-            width: 300px;
-            height: 300px;
-            object-fit: cover;
-        }
-
-        .single-image {
-            text-align: center;
-            margin: 20px 0;
-        }
-        .single-image img {
-            max-width: 400px;
-            height: auto;
-            border: 3px solid #ccc;
-            border-radius: 10px;
-        }
-
-        .text-input {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .text-input input {
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            width: 300px;
-        }
-
-        .consent-text {
-            text-align: left;
-            line-height: 1.6;
-            margin: 20px 0;
-        }
-        .demographics-form {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        .form-group {
-            margin: 15px 0;
-            text-align: left;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group select {
-            width: 100%;
-            padding: 8px;
-            font-size: 14px;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-        }
-    </style>
+    <script src="utils.js"></script>
+    <script src="manifest.js"></script>
+    <script src="prod_comp_expt.js"></script>
 </head>
 <body>
     <div id="jspsych-target"></div>
-    <script src="manifest.js"></script>
-    <script src="prod_comp_expt.js"></script>
 </body>
 </html>
