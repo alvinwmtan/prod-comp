@@ -1,11 +1,18 @@
+let ppt_id = 'P' + Date.now();
+
 // Initialize jsPsych
 const jsPsych = initJsPsych({
     override_safe_mode: true,
-    on_finish: function(data) {
-        console.log('Experiment complete');
-        console.log(data.csv());
-    }
+    on_finish: function() {
+        jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+        jsPsych.data.displayData();
+      },
+      on_close: function() {
+        jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+      }
 });
+
+jsPsych.data.addProperties({ ppt_id: ppt_id });
 
 // Global variables
 let manifestData = [];
@@ -146,7 +153,11 @@ function processManifestData() {
     groupOrder = Math.random() < 0.5 ? 'CP' : 'PC';
 }
 
-// Create 4AFC trial
+let num_wrong_in_a_row = 0;
+let skip_prod = false;
+let skip_comp = false;
+
+// Create comprehension trial
 function createComprehensionTrial(trialData) {
     const images = [trialData.target, trialData.distractor1, trialData.distractor2, trialData.distractor3];
     const shuffledImages = jsPsych.randomization.shuffle(images);
@@ -171,9 +182,22 @@ function createComprehensionTrial(trialData) {
             presented_images: shuffledImages,
             group_order: groupOrder
         },
+        on_load: function() {
+            if (skip_comp) {
+                jsPsych.finishTrial();
+            }
+        },
         on_finish: function(data) {
             data.correct = data.response === correctIndex;
             console.log(data);
+            if (!data.correct) {
+                num_wrong_in_a_row++;
+            } else {
+                num_wrong_in_a_row = 0;
+            }
+            if (num_wrong_in_a_row >= 6) {
+                skip_comp = true;
+            }
         }
     };
 }
@@ -202,8 +226,14 @@ function createProductionTrial(trialData) {
             // Wait for DOM to fully render, then focus
             const input = document.getElementById('prod-input');
             if (input) input.focus();
+            if (skip_prod) {
+                jsPsych.finishTrial();
+            }
         },
         on_finish: function(data) {
+            if (skip_prod) {
+                return;
+            }
             const response = data.response.response.toLowerCase().trim();
             const correct = trialData.label.toLowerCase().trim();
             const all_responses = response.split("/");
@@ -213,12 +243,20 @@ function createProductionTrial(trialData) {
             data.correct_response = correct;
             data.correct = final_response === correct;
             console.log(data);
+            if (!data.correct) {
+                num_wrong_in_a_row++;
+            } else {
+                num_wrong_in_a_row = 0;
+            }
+            if (num_wrong_in_a_row >= 6) {
+                skip_prod = true;
+            }
         }
     };
 }
 
 // Instructions for each task type
-const instructions4AFC = {
+const instructionsComprehension = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
         <h2>Instructions: Matching Task</h2>
@@ -276,8 +314,8 @@ async function buildTimeline() {
     }
 
     if (groupOrder === 'CP') {
-        // C group first (4AFC)
-        timeline.push(instructions4AFC);
+        // C group first (comprehension)
+        timeline.push(instructionsComprehension);
         timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
         timeline.push({
             type: jsPsychHtmlButtonResponse,
@@ -288,7 +326,7 @@ async function buildTimeline() {
         
         timeline.push(betweenGroupsBreak);
         
-        // P group second (Production)
+        // P group second (production)
         timeline.push(instructionsProduction);
         timeline.push(...practiceTrialsP.map(trial => createProductionTrial(trial)));
         timeline.push({
@@ -298,7 +336,7 @@ async function buildTimeline() {
         });
         timeline.push(...mainTrialsP.map(trial => createProductionTrial(trial)));
     } else {
-        // P group first (Production)
+        // P group first (production)
         timeline.push(instructionsProduction);
         timeline.push(...practiceTrialsP.map(trial => createProductionTrial(trial)));
         timeline.push({
@@ -310,8 +348,8 @@ async function buildTimeline() {
         
         timeline.push(betweenGroupsBreak);
         
-        // C group second (4AFC)
-        timeline.push(instructions4AFC);
+        // C group second (comprehension)
+        timeline.push(instructionsComprehension);
         timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
         timeline.push({
             type: jsPsychHtmlButtonResponse,
