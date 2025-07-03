@@ -50,3 +50,8 @@ rsconnect/
 
 .DS_Store
 vv_data/
+
+expt/mongo_auth.json
+expt/package-lock.json
+expt/package.json
+expt/node_modules/

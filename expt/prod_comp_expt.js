@@ -1,18 +1,38 @@
+const onserver = true;
 let ppt_id = 'P' + Date.now();
 
 // Initialize jsPsych
 const jsPsych = initJsPsych({
     override_safe_mode: true,
     on_finish: function() {
-        jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+        if (!onserver) {
+            jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+        }
         jsPsych.data.displayData();
+        window.location.reload();
       },
       on_close: function() {
-        jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+        if (!onserver) {
+            jsPsych.data.get().localSave('csv', "pc_" + ppt_id + ".csv");
+        }
       }
 });
 
 jsPsych.data.addProperties({ ppt_id: ppt_id });
+
+// Data caching function
+function cacheAndLogData(data) {
+    if (!window.experimentData) {
+        window.experimentData = [];
+    }
+    window.experimentData.push(data);
+    
+    if (onserver) {
+        logData(data);
+    } else {
+        console.log('Trial data:', data);
+    }
+}
 
 // Global variables
 let manifestData = [];
@@ -57,6 +77,7 @@ const consent = {
     `,
     choices: ['I Agree', 'I Do Not Agree'],
     on_finish: function(data) {
+        cacheAndLogData(data);
         if (data.response === 1) { // "I Do Not Agree"
             jsPsych.endExperiment('Thank you. The experiment has been terminated.');
         }
@@ -69,6 +90,10 @@ const demographics = {
     html: `
         <div class="demographics-form">
             <h2>About You</h2>
+            <div class="form-group">
+                <label for="ppt_id_manual">Participant ID:</label>
+                <input type="text" name="ppt_id_manual" id="ppt_id_manual" required>
+            </div>
             <div class="form-group">
                 <label for="age">Age:</label>
                 <select name="age" id="age" required>
@@ -103,7 +128,10 @@ const demographics = {
                 </select>
             </div>
         </div>
-    `
+    `,
+    on_finish: function(data) {
+        cacheAndLogData(data);
+    }
 };
 
 // Function to load and process manifest
@@ -190,6 +218,7 @@ function createComprehensionTrial(trialData) {
         on_finish: function(data) {
             data.correct = data.response === correctIndex;
             console.log(data);
+            cacheAndLogData(data);
             if (!data.correct) {
                 num_wrong_in_a_row++;
             } else {
@@ -243,6 +272,7 @@ function createProductionTrial(trialData) {
             data.correct_response = correct;
             data.correct = final_response === correct;
             console.log(data);
+            cacheAndLogData(data);
             if (!data.correct) {
                 num_wrong_in_a_row++;
             } else {
@@ -278,6 +308,12 @@ const instructionsProduction = {
     choices: ['Continue']
 };
 
+const postPractice = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: '<p>Practice complete! Let\'s keep going.</p>',
+    choices: ['Continue']
+}
+
 // Break between groups
 const betweenGroupsBreak = {
     type: jsPsychHtmlButtonResponse,
@@ -295,11 +331,16 @@ const final = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
         <h2>Thank you!</h2>
-        <p>You have completed the experiment. Thank you for your participation!</p>
-        <p>You may now close this window.</p>
+        <p>Great job! Thanks for playing!</p>
     `,
     choices: ['Finish']
 };
+
+const preload = {
+    type: jsPsychPreload,
+    images: [...MANIFEST_DATA.map(trial => trial.target), ...MANIFEST_DATA.map(trial => trial.distractor1), 
+        ...MANIFEST_DATA.map(trial => trial.distractor2), ...MANIFEST_DATA.map(trial => trial.distractor3)]
+  };
 
 // Build timeline
 async function buildTimeline() {
@@ -307,6 +348,7 @@ async function buildTimeline() {
     
     const testing = false;
     let timeline = [];
+    timeline.push(preload);
     if (testing) {
         groupOrder = 'CP';
     } else {
@@ -317,11 +359,7 @@ async function buildTimeline() {
         // C group first (comprehension)
         timeline.push(instructionsComprehension);
         timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
-        timeline.push({
-            type: jsPsychHtmlButtonResponse,
-            stimulus: '<p>Practice complete! Now starting the main task.</p>',
-            choices: ['Continue']
-        });
+        timeline.push(postPractice);
         timeline.push(...mainTrialsC.map(trial => createComprehensionTrial(trial)));
         
         timeline.push(betweenGroupsBreak);
@@ -329,21 +367,13 @@ async function buildTimeline() {
         // P group second (production)
         timeline.push(instructionsProduction);
         timeline.push(...practiceTrialsP.map(trial => createProductionTrial(trial)));
-        timeline.push({
-            type: jsPsychHtmlButtonResponse,
-            stimulus: '<p>Practice complete! Now starting the main task.</p>',
-            choices: ['Continue']
-        });
+        timeline.push(postPractice);
         timeline.push(...mainTrialsP.map(trial => createProductionTrial(trial)));
     } else {
         // P group first (production)
         timeline.push(instructionsProduction);
         timeline.push(...practiceTrialsP.map(trial => createProductionTrial(trial)));
-        timeline.push({
-            type: jsPsychHtmlButtonResponse,
-            stimulus: '<p>Practice complete! Now starting the main task.</p>',
-            choices: ['Continue']
-        });
+        timeline.push(postPractice);
         timeline.push(...mainTrialsP.map(trial => createProductionTrial(trial)));
         
         timeline.push(betweenGroupsBreak);
@@ -351,11 +381,7 @@ async function buildTimeline() {
         // C group second (comprehension)
         timeline.push(instructionsComprehension);
         timeline.push(...practiceTrialsC.map(trial => createComprehensionTrial(trial)));
-        timeline.push({
-            type: jsPsychHtmlButtonResponse,
-            stimulus: '<p>Practice complete! Now starting the main task.</p>',
-            choices: ['Continue']
-        });
+        timeline.push(postPractice);
         timeline.push(...mainTrialsC.map(trial => createComprehensionTrial(trial)));
     }
 
